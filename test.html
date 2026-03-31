@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plant Disease Tester</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        h2 { color: #2c7a2c; text-align: center; }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #2c7a2c;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        button:hover { background: #1e5c1e; }
+        #result {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .prediction {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .healthy { color: #2c7a2c; }
+        .mild { color: #e6a817; }
+        .severe { color: #cc2200; }
+        .spray {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>🌿 Plant Disease Detector</h2>
+
+    <div class="card">
+        <label>Upload Leaf Image:</label>
+        <input type="file" id="imageInput" accept="image/*" capture="camera">
+        <img id="preview" style="display:none">
+    </div>
+
+    <div class="card">
+        <label>Temperature (°C):</label>
+        <input type="number" id="temp" value="30" min="0" max="60">
+        <label>Humidity (%):</label>
+        <input type="number" id="humidity" value="60" min="0" max="100">
+    </div>
+
+    <button onclick="predict()">Analyze Leaf</button>
+
+    <div id="result">
+        <p>Result:</p>
+        <div class="prediction" id="predText"></div>
+        <div>Confidence: <strong id="confText"></strong></div>
+        <div class="spray">💧 Spray Amount: <strong id="sprayText"></strong>%</div>
+        <div>Spray Level: <strong id="levelText"></strong></div>
+    </div>
+
+    <script>
+        // Show image preview
+        document.getElementById('imageInput').onchange = function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.getElementById('preview');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        async function predict() {
+            const imageFile = document.getElementById('imageInput').files[0];
+            if (!imageFile) {
+                alert('Please select an image first!');
+                return;
+            }
+
+            const temp = document.getElementById('temp').value;
+            const humidity = document.getElementById('humidity').value;
+
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            formData.append('temperature', temp);
+            formData.append('humidity', humidity);
+
+            try {
+                const response = await fetch('http://10.205.25.225:5000/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                // Show result
+                document.getElementById('result').style.display = 'block';
+                const predText = document.getElementById('predText');
+                predText.textContent = data.prediction;
+                predText.className = 'prediction ' + data.prediction.toLowerCase();
+
+                document.getElementById('confText').textContent = data.confidence + '%';
+                document.getElementById('sprayText').textContent = data.spray_amount;
+                document.getElementById('levelText').textContent = data.spray_level;
+
+            } catch (error) {
+                alert('Error connecting to API. Make sure you are on the same WiFi!');
+            }
+        }
+    </script>
+</body>
+</html>
