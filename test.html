@@ -118,7 +118,7 @@
             formData.append('humidity', humidity);
 
             try {
-                const response = await fetch('http://10.205.25.225:5000/predict', {
+                const response = await fetch('/predict', {
                     method: 'POST',
                     body: formData
                 });
