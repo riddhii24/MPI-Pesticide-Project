@@ -22,26 +22,42 @@ def predict_image(img):
     return predicted_class, confidence
 
 def get_spray_decision(predicted_class, confidence, temperature, humidity):
+    
+    # Base spray from infection level
     if predicted_class == 'Healthy':
-        spray_level = 'none'
         spray_amount = 0
     elif predicted_class == 'Mild':
-        spray_level = 'light'
         spray_amount = 30
-    else:
-        spray_level = 'heavy'
+    else:  # Severe
         spray_amount = 100
 
-    if predicted_class != 'Healthy':
-        if humidity > 80:
-            spray_amount = min(spray_amount + 20, 100)
-        if temperature > 35:
-            spray_amount = min(spray_amount + 10, 100)
-        if humidity < 30:
-            spray_amount = max(spray_amount - 10, 0)
+    # Temperature adjustments
+    if temperature > 40:
+        spray_amount = min(spray_amount + 20, 100)
+    elif temperature > 35:
+        spray_amount = min(spray_amount + 10, 100)
+    elif temperature < 15:
+        spray_amount = max(spray_amount - 10, 0)
+
+    # Humidity adjustments
+    if humidity > 80:
+        spray_amount = min(spray_amount + 20, 100)
+    elif humidity > 60:
+        spray_amount = min(spray_amount + 10, 100)
+    elif humidity < 30:
+        spray_amount = max(spray_amount - 10, 0)
+
+    # Determine spray level label from final amount
+    if spray_amount == 0:
+        spray_level = 'none'
+    elif spray_amount <= 30:
+        spray_level = 'light'
+    elif spray_amount <= 60:
+        spray_level = 'moderate'
+    else:
+        spray_level = 'heavy'
 
     return spray_level, spray_amount
-
 @app.route('/predict', methods=['POST'])
 def predict():
     if 'image' not in request.files:
